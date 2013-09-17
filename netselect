@@ -1,0 +1,48 @@
+#!/bin/sh
+
+show_help() {
+  echo "-> Profile name must start with or equal pattern (case-inensitive)."
+  echo "-------------------------------------------------------------------"
+  scselect
+  exit 1
+}
+
+error() {
+  echo "ERROR: $1" >&2
+  show_help
+}
+
+# -- select profile --
+
+[ -n "$1" ] || error "No pattern given for selection!"
+
+profiles=`scselect | tail -n +2`
+
+current=`echo "$profiles" | grep '^ \*' | cut -f 2 | tr -d \(\)`
+new=`echo "$profiles" | grep -i -o "($1)" | tr -d \(\)`
+
+# select by start-with if there is no exact match
+if [ -z "$new" ]; then
+  new=`echo "$profiles" | grep -i -o "($1.*)" | tr -d \(\)`
+  count=`echo "$new" | wc -l | tr -d ' '`
+  [ -n "$new" ] ||  error "No profile name starting with '$1'"
+  [ $count -eq 1 ] || error "Multiple profiles(#$count) start with '$1'."
+fi
+
+[ "$current" != "$new" ] || error "Profile '$1' already selected. Pick a new one."
+
+
+# -- switch profile --
+
+echo "Switching network profile: ${current} -> ${new}"
+
+sudo -s <<EOF
+
+  [ -f $HOME/.network/down.d/$current ] && . $HOME/.network/down.d/$current
+
+  scselect ${new}
+
+  [ -f $HOME/.network/up.d/$new ] && sleep 3 && . $HOME/.network/up.d/$new
+
+EOF
+
