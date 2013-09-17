@@ -29,7 +29,7 @@ if [ -z "$new" ]; then
   [ $count -eq 1 ] || error "Multiple profiles(#$count) start with '$1'."
 fi
 
-[ "$current" != "$new" ] || error "Profile '$1' already selected. Pick a new one."
+[ "$current" != "$new" ] || error "Profile '$current' already selected. Pick a new one."
 
 
 # -- switch profile --
